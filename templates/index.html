@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Recommendations</title>
+    <script src="https://unpkg.com/htmx.org"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-blue-600">Your Job Matches</h1>
+        
+        <div hx-get="/api/jobs" hx-trigger="load" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <!-- Loading indicator -->
+            <div class="htmx-indicator text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+            
+            <!-- Job cards will be inserted here -->
+        </div>
+    </div>
+
+    <template id="job-card">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800" data-field="title"></h2>
+                        <p class="text-blue-600 font-medium" data-field="company"></p>
+                        <p class="text-sm text-gray-600 mt-1" data-field="location"></p>
+                    </div>
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm" data-field="match_score"></span>
+                </div>
+                
+                <p class="text-gray-700 mb-4" data-field="explanation"></p>
+                
+                <a href="#" target="_blank" class="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors" data-field="job_url">
+                    Apply Now →
+                </a>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        htmx.onLoad(function(content) {
+            // Handle JSON response and populate templates
+            document.body.addEventListener('htmx:afterRequest', function(evt) {
+                if(evt.detail.requestConfig.path === '/api/jobs') {
+                    const template = document.getElementById('job-card')
+                    const container = document.querySelector('.grid')
+                    
+                    container.innerHTML = '' // Clear loading indicator
+                    
+                    JSON.parse(evt.detail.xhr.response).forEach(job => {
+                        const clone = template.content.cloneNode(true)
+                        
+                        // Populate all data fields
+                        clone.querySelectorAll('[data-field]').forEach(el => {
+                            const field = el.dataset.field
+                            if(field === 'job_url') {
+                                el.href = job[field]
+                            } else {
+                                el.textContent = job[field]
+                            }
+                        })
+                        
+                        container.appendChild(clone)
+                    })
+                }
+            })
+        })
+    </script>
+</body>
+</html>
